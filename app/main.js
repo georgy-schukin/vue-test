@@ -1,3 +1,5 @@
+var eventBus = new Vue();
+
 Vue.component('product-details', {
 	props: {
 		details: {
@@ -68,7 +70,7 @@ Vue.component('product-review', {
 				review: this.review,
 				rating: this.rating
 			}
-			this.$emit('review-submitted', productReview)
+			eventBus.$emit('review-submitted', productReview)
 			this.name = null
 			this.review = null
 			this.rating = 1
@@ -76,6 +78,47 @@ Vue.component('product-review', {
 		}		
 	}
 });
+
+Vue.component('product-tabs', {
+	props: {
+		reviews: {
+			type: Array,
+			required: true
+		}
+	},
+	template: `
+		<div>
+			<span class="tab" 
+				v-for="(tab, index) in tabs" 
+				:key="index" 
+				@click="selectedTab = tab"
+				:class="{activeTab: selectedTab === tab}">
+				{{tab}}
+			</span>		
+
+			<div v-show="selectedTab === 'Reviews'">
+			<h2>Reviews</h2>
+			<p v-show="reviews.length === 0">There are no reviews yet.</p>
+			<ul>
+			<li v-for="review in reviews">
+				<p>{{review.name}}</p>
+				<p>Rating: {{review.rating}}</p>
+				<p>{{review.review}}</p>
+			</li>
+			</ul>
+			</div>
+
+			<product-review v-show="selectedTab === 'Make a review'"></product-review>	
+
+		</div>
+	`,
+	data() {
+		return {
+			tabs: ['Reviews', 'Make a review'],
+			selectedTab: 'Reviews'
+		}
+	}
+})
 
 Vue.component('product', {
 	props: {
@@ -117,19 +160,7 @@ Vue.component('product', {
 			<button v-on:click="removeFromCart">Remove from cart</button>			
 		</div>	
 
-		<div>
-		<h2>Reviews</h2>
-		<p v-show="reviews.length === 0">There are no reviews yet.</p>
-		<ul>
-		<li v-for="review in reviews">
-			<p>{{review.name}}</p>
-			<p>Rating: {{review.rating}}</p>
-			<p>{{review.review}}</p>
-		</li>
-		</ul>
-		</div>
-
-		<product-review @review-submitted="addReview"></product-review>	
+		<product-tabs :reviews="reviews"></product-tabs>		
 
 		</div>`,
 	data() {
@@ -195,6 +226,12 @@ Vue.component('product', {
 		shipping() {
 			return this.premium ? 'Free' : 2.99
 		}
+	},
+	mounted() {
+		eventBus.$on('review-submitted', review => {
+			this.addReview(review)
+		}) 
+		console.log("added")
 	}
 });
 
